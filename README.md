@@ -85,5 +85,6 @@ llm_cia\
 
 > special reminder
 
-When you want to use our code, you first need to download the `graphcodebert model` at  [microsoft/graphcodebert-base at main](https://huggingface.co/microsoft/graphcodebert-base/tree/main) and replace the `lib\func3\microsoft` folder in our code repository with it!
+- When you want to use our code, you first need to download the `graphcodebert model` at  [microsoft/graphcodebert-base at main](https://huggingface.co/microsoft/graphcodebert-base/tree/main) and put it in the `lib\func3\microsoft` folder.
+- You need to download the open source project via `SVN` and put it in repository_data folder.
 
