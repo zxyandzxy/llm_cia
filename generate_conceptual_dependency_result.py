@@ -85,5 +85,5 @@ if __name__ == "__main__":
     parent_folder = "D:\science_research\change_impact_analysis\llm_cia\experiment_data"
     project = ['freecol', 'hsqldb', 'JAMWiki', 'jEdit', 'JHotDraw', 'Makagiga', 'OmegaT']
     for project_name in project:
-        path = os.path.join(parent_folder, f"{project_name}Result.txt")
+        path = os.path.join(parent_folder, project_name)
         get_conceptual_dependency(path)

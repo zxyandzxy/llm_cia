@@ -66,10 +66,12 @@ llm_cia\
 			hsqldb\
 			...
 		...
-	RQ1.py
+	RQ2.py
 	generate_co_change_coupling_dependency.py
 	generate_conceptual_dependency_result.py
 	generate_coupling_dependency_result.py
+	generate_ground_truth_conceptual_analysis_result.py
+	generate_ground_truth_coupling_analysis_result.py
 ```
 
 - The `func1 func2 func3 func4 func5` under `lib` is the specific code for the 5 functions we designed and implemented
@@ -78,10 +80,12 @@ llm_cia\
 - `compute_score.py` is the file for the calculation of performance metrics, which evaluates the performance of the method through precision and recall
 - `get_file_path.py` is the utility function to find the path to the source code file of an entity
 - `results` stores `LLM` interactions with local functions
-- `RQ1` is the code for the three experimental programs in `RQ1`
+- `RQ2 is the code for the three experimental programs in RQ2`
 - `generate_co_change_coupling_dependency.py`is the code that generates the `co_change_coupling_dependency`folder
 - `generate_conceptual_dependency_result.py`is the code that generates the`conceptual_dependency_result`folder
 - `generate_coupling_dependency_result.py`is the code that generates the`coupling_dependency_result`folder
+- `generate_ground_truth_conceptual_analysis_result.py` is the code that generates the`ground_truth_conceptual_analysis`folder
+- `generate_ground_truth_conpling_analysis_result.py` is the code that generates the`ground_truth_coupling_analysis`folder`
 
 > special reminder
 
