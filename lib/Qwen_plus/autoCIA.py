@@ -5,7 +5,7 @@ import hashlib
 from copy import deepcopy
 from lib.Qwen_plus import llm_utils, pro_interface
 
-Qwen_RESULT_DIR = 'D:\science_research\change_impact_analysis\llm_cia\\results\Qwen_RESULTS'
+Qwen_RESULT_DIR = 'D:\science_research\change_impact_analysis\llm_cia\\results\Qwen_K_RESULTS'
 
 class AutoCIA(llm_utils.OpenAIEngine):
     def __init__(self, model_type, system_file, project_name, commit_num):
@@ -81,7 +81,7 @@ class AutoCIA(llm_utils.OpenAIEngine):
 
     def step(self, function_call_mode="none"):
         if function_call_mode == "none":
-            user_message = "The result of the function get_co_change_relationship should be included in its entirety as your answer. As for the ordering of each entity you need to decide for yourself based on your analysis. This is the last conversation where you have to give an answer in the form of the example(The elements in the Change set are sorted in descending order of the likelihood of synchronized modifications):" \
+            user_message = "This is the final round of conversation, and you need to give your answers strictly in the form of the example , without any other extra text (the elements in the Change set should be sorted in descending order of the likelihood of needing synchronous modification). Please note that in order to ensure recall, you need to give as many entities as possible (preferably more than 40) that need to be modified synchronously based on your analysis, where the result of the function get_co_change_relationship should be used as an important reference. An example of the answer is given below:" \
                            "Title: Diagnosis of starting entity `DatabaseURL`" \
                            "Change set: [ServerConstants, jdbcDriver]" \
                            "Details: Explain why each entity in your given change set needs to synchronize changes"
@@ -116,7 +116,7 @@ class AutoCIA(llm_utils.OpenAIEngine):
         else:
             self._append_to_messages(response_message)  # extend conversation with assistant's reply
             if function_call_mode == "auto":
-                user_message = "The result of the function get_co_change_relationship should be included in its entirety as your answer. As for the ordering of each entity you need to decide for yourself based on your analysis. This is the last conversation where you have to give an answer in the form of the example(The elements in the Change set are sorted in descending order of the likelihood of synchronized modifications):" \
+                user_message = "This is the final round of conversation, and you need to give your answers strictly in the form of the example, without any other extra text (the elements in the Change set should be sorted in descending order of the likelihood of needing synchronous modification). Please note that in order to ensure recall, you need to give as many entities as possible (preferably more than 40) that need to be modified synchronously based on your analysis, where the result of the function get_co_change_relationship should be used as an important reference. An example of the answer is given below:" \
                                "Title: Diagnosis of starting entity `DatabaseURL`" \
                                "Change set: [ServerConstants, jdbcDriver]" \
                                "Details: Explain why each entity in your given change set needs to synchronize changes"

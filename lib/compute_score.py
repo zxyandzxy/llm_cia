@@ -1,5 +1,18 @@
 import os
 import json
+from lib.func4 import call_graph
+from lib import get_file_path
+
+
+project2root = {
+        "freecol": "D:\science_research\change_impact_analysis\llm_cia\\repository_data\\freecol",
+        "hsqldb": "D:\science_research\change_impact_analysis\llm_cia\\repository_data\hsqldb",
+        "JAMWiki": "D:\science_research\change_impact_analysis\llm_cia\\repository_data\JAMWiki",
+        "jEdit": "D:\science_research\change_impact_analysis\llm_cia\\repository_data\jEdit",
+        "JHotDraw": "D:\science_research\change_impact_analysis\llm_cia\\repository_data\JHotDraw",
+        "Makagiga": "D:\science_research\change_impact_analysis\llm_cia\\repository_data\Makagiga",
+        "OmegaT": "D:\science_research\change_impact_analysis\llm_cia\\repository_data\OmegaT"
+    }
 
 # Calculate Precision, Recall and F1-score for a given ground truth and result for different k values.
 def calculate_metrics(ground_truth, result, k_values=(5, 10, 20, 30, 40)):
@@ -161,6 +174,130 @@ def supplement_co_change(project_name, commit_num, result):
         result.append(co_change_entity)
     return result
 
+def get_coupling_result(file_path):
+    result = {}
+    try:
+        with open(file_path, 'r', encoding='utf-8') as file:
+            for line in file:
+                parts = line.strip().split(':', 1)
+                if len(parts) != 2:
+                    continue  #
+
+                coreclass, array_str = parts[0].strip(), parts[1].strip()
+
+                try:
+                    target_substrings = [
+                        "There are no coupling dependencies between these two entities",
+                        "is not exist in project code"
+                    ]
+
+                    flag = True
+                    for substring in target_substrings:
+                        if substring in array_str:
+                            result[coreclass] = False
+                            flag = False
+                    if flag is True:
+                        result[coreclass] = True
+
+                except (ValueError, SyntaxError):
+                    print(array_str + "cannot be parsed, its coreclass is" + coreclass)
+                    continue
+
+    except FileNotFoundError:
+        print(f"File {file_path} not found.")
+        return False
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return False
+
+    return result
+
+def get_conceptual_result(file_path):
+    result = {}
+    try:
+        with open(file_path, 'r', encoding='utf-8') as file:
+            for line in file:
+                parts = line.strip().split(':', 1)
+                if len(parts) != 2:
+                    continue  #
+
+                coreclass, average_similarity = parts[0].strip(), parts[1].strip()
+
+                if "is not exist in project code" in average_similarity:
+                    result[coreclass] = False
+                elif float(average_similarity) > 0.8:
+                    result[coreclass] = True
+                else:
+                    result[coreclass] = False
+    except FileNotFoundError:
+        print(f"File {file_path} not found.")
+        return False
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return False
+
+    return result
+
+def supplement_vote(project_name, commit_num, result):
+    java_files = call_graph.collect_java_files(project2root[project_name])
+    coreclass_path = os.path.join("D:\science_research\change_impact_analysis\llm_cia\experiment_data",
+                                  project_name, str(commit_num), "coreclass.txt")
+    with open(coreclass_path, 'r') as f:
+        lines = f.readlines()
+        coreclass = lines[0].split(":")[0].strip()
+
+        # Get coupling dependencies, conceptual coupling and call graph results based on coreclass
+        coupling_path = os.path.join(
+            "D:\science_research\change_impact_analysis\llm_cia\coupling_dependency_result",
+            project_name, commit_num + "_" + coreclass + '.txt')
+        if os.path.exists(coupling_path):
+            cp_result = get_coupling_result(coupling_path)
+        else:
+            print(f"coupling_path not found in: {coupling_path}")
+            print('#' * 100)
+
+        conceptual_path = os.path.join(
+            "D:\science_research\change_impact_analysis\llm_cia\conceptual_dependency_result",
+            project_name, f"{commit_num}_{coreclass}.txt")
+        if os.path.exists(conceptual_path):
+            con_result = get_conceptual_result(conceptual_path)
+        else:
+            print(f"conceptual_path not found in: {conceptual_path}")
+            print('#' * 100)
+
+        file_path1 = get_file_path.find_first_file(project_name=project_name,
+                                                   filename=coreclass + '.java')
+        if file_path1 is None:
+            return supplement_co_change(project_name, commit_num, result)
+        imports = call_graph.parse_imports(file_path1)
+        call_graph_res = call_graph.match_project_classes(project2root[project_name],
+                                                     imports, java_files)
+
+        # Get voting results
+        temp_result = get_co_change_relationship(coreclass, project_name)
+        temp_zip_result = []
+        for temp_entity in temp_result:
+            vote = 0
+            if temp_entity in cp_result and cp_result[temp_entity] is True:
+                vote += 1
+            if temp_entity in con_result and con_result[temp_entity] is True:
+                vote += 1
+            if temp_entity in call_graph_res:
+                vote += 1
+            temp_zip_result.append({'entity': temp_entity, 'vote': vote})
+        sorted_temp_zip_result = sorted(
+            temp_zip_result,
+            key=lambda x: (-x['vote'], temp_result.index(x['entity']))
+        )
+
+        # Extracts the sorted entity fields into a final string array
+        final_result = [item['entity'] for item in sorted_temp_zip_result]
+        for final_entity in final_result:
+            if final_entity in result:
+                continue
+            result.append(final_entity)
+        return result
+
 def get_project_task(parent_folder):
     project_name = parent_folder.split("\\")[-1]
     tasks = []
@@ -169,7 +306,8 @@ def get_project_task(parent_folder):
             file_path = entry.path
             commit_num = file_path.split("\\")[-1].split('.')[0]
             result = get_result_from_Json(file_path)
-            result = supplement_co_change(project_name, commit_num, result)
+            # result = supplement_co_change(project_name, commit_num, result)
+            # result = supplement_vote(project_name, commit_num, result)
 
             ground_truth = get_ground_truth(project_name, commit_num)
             tasks.append((ground_truth, result))
@@ -190,10 +328,10 @@ def get_LLM_answerLen(parent_folder):
             result_len.append(len(result))
     return sum(result_len) / len(result_len)
 
-parent_folder = "D:\science_research\change_impact_analysis\llm_cia\\results\Qwen_RESULTS"
-project = ["freecol", "hsqldb", "JAMWiki", "jEdit", "JHotDraw", "Makagiga", "OmegaT"]
-for project_name in project:
-    get_project_task(os.path.join(parent_folder, project_name))
-    print('\n' * 2)
-    # l = get_LLM_answerLen(os.path.join(parent_folder, project_name))
-    # print(f"{project_name} : {l}")
+# parent_folder = "D:\science_research\change_impact_analysis\llm_cia\\results\Qwen_K_RESULTS"
+# project = ["freecol", "hsqldb", "JAMWiki", "jEdit", "JHotDraw", "Makagiga", "OmegaT"]
+# for project_name in project:
+#     get_project_task(os.path.join(parent_folder, project_name))
+#     print('\n' * 2)
+#     # l = get_LLM_answerLen(os.path.join(parent_folder, project_name))
+#     # print(f"{project_name} : {l}")

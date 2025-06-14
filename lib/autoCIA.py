@@ -48,14 +48,17 @@ def svn_update_to_revision(revision, path='.'):
 
 def getQwenResult(model, project_name, commit_num):
 
-    svn_update_to_revision(commit_num, project2root[project_name])
+    # svn_update_to_revision(commit_num, project2root[project_name])
     ad = qwen_autoCIA(model, './Qwen_plus/prompts/system_msg.txt', project_name, commit_num)
-
+    start = time.perf_counter()
     try:
         ad.run()
     except Exception as e:
         raise e
-
+    end = time.perf_counter()
+    cost_time_path = os.path.join("D:\science_research\change_impact_analysis\llm_cia\\results\LLM_CIA_Time", f"{project_name}.txt")
+    with open(cost_time_path, 'a', encoding='utf-8') as file:
+        file.write(f"{commit_num} : {end - start:.5f} s\n")
     file_path = os.path.join(Qwen_RESULT_DIR + '\\' + project_name, str(commit_num) + '.json')
     with open(file_path, "w") as f:
         json.dump({
@@ -92,7 +95,6 @@ def getGPTResult(model ,project_name, commit_num):
 
     print(f"has processed {commit_num}")
 
-
 def get_first_level_subfolders(directory):
     try:
         if not os.path.exists(directory) or not os.path.isdir(directory):
@@ -112,9 +114,9 @@ if __name__ == '__main__':
         out = get_first_level_subfolders("D:\science_research\change_impact_analysis\llm_cia\experiment_data\\" + project_name)
         out = sorted(out, key=int, reverse=True)
         for i in out:
-            output_path = os.path.join(GPT_RESULT_DIR, project_name, f"{str(i)}.json")
+            output_path = os.path.join(Qwen_RESULT_DIR, project_name, f"{str(i)}.json")
             if os.path.exists(output_path):
                 continue
-            # getQwenResult("qwen-plus-latest", project_name, i)
-            getGPTResult("gpt-3.5-turbo", project_name, i)  # gpt-4o-mini  gpt-3.5-turbo  gpt-4-turbo
+            getQwenResult("qwen-plus-latest", project_name, i)
+            # getGPTResult("gpt-3.5-turbo", project_name, i)  # gpt-4o-mini  gpt-3.5-turbo  gpt-4-turbo
 
